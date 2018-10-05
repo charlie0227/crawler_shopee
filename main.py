@@ -20,7 +20,7 @@ chrome_options.add_argument('--no-sandbox')
 path = os.path.dirname(os.path.abspath(__file__))
 driver = webdriver.Chrome(path+'/chromedriver',chrome_options=chrome_options)
 driver.set_window_size(1200,800)
-x_login_button = "//*[@id='main']/div/div[2]/div[1]/div/div[1]/div/ul[2]/li[5]"
+x_login_button = "//*[@id='main']/div/div[2]/div[1]/div/div[1]/div/ul/li[5]"
 x_username = "//*[@id='main']/div/div[2]/div[1]/div[2]/div/div[1]/div/div[2]/div[1]/div/div/div[1]/div[2]/div[1]/input"
 x_password = "//*[@id='main']/div/div[2]/div[1]/div[2]/div/div[1]/div/div[2]/div[1]/div/div/div[1]/div[3]/div[1]/input"
 x_login_submit = "//*[@id='main']/div/div[2]/div[1]/div[2]/div/div[1]/div/div[2]/div[1]/div/div/div[2]/button[2]"
@@ -53,6 +53,11 @@ try :#login by cookie
     logging.info('['+strftime("%Y-%m-%d %H:%M:%S", gmtime())+']')
     logging.info("start the program")
     driver.get("https://shopee.tw")
+    try:
+        pop = driver.find_element_by_css_selector(".shopee-popup__close-btn")
+        pop.click()
+    except Exception as e :
+        pass
     load_cookie(driver,path+'/'+cookie_name)
     driver.get("https://shopee.tw")
     logging.info("login success : by cookie")
@@ -90,6 +95,7 @@ try:
     earn = driver.find_element_by_xpath(x_earn_amount)
     logging.info("You get $"+earn.text+" this time")
 except Exception as e :
+    logging.info(repr(e))
     logging.info("You have already click")
 try:
     money = driver.find_element_by_xpath(x_money_new)
