@@ -26,8 +26,15 @@ Filled in your username and password in env.py
 
 Simply run command
 
-    docker run -it --rm -v .:/code charlie27/python36-selenium-chromedriver sh -c "python main.py" 
+    docker run -it --rm -v .:/code charlie27/python36-selenium-chromedriver sh -c "python main.py"
+    
+Or build by yourself
+
+    docker build -t shopee:latest .
+    docker run -it --rm -v .:/code shopee sh -c "python main.py"
+    
 You'll need to enter SMS authenticate first time if used password to login
+
 ![alt text](https://raw.githubusercontent.com/charlie0227/crawler_shopee/master/readme/SMS.png)
 
     Please Enter SMS code in 60 seconds: 
@@ -66,4 +73,5 @@ Last, goto https://shopee.tw/shopee-coins-internal/?scenario=1 to own your shope
 
 
 ## License
+
 [MIT](https://choosealicense.com/licenses/mit/)
