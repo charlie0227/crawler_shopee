@@ -14,7 +14,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 class Logger:
     def __init__(self, path, filename):
-        if not os.path.exists(path):
+        if not os.path.exists(path+'/log'):
             os.makedirs(path+'/log')
         logging.basicConfig(level=logging.INFO,
             format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
