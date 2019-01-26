@@ -14,12 +14,12 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 class Logger:
     def __init__(self, path, filename):
+        if not os.path.exists(path):
+            os.makedirs(path+'/log')
         logging.basicConfig(level=logging.INFO,
             format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
             datefmt='%m-%d %H:%M:%S',
-            filename=path+'/'+filename)
-        if not os.path.exists(path):
-            os.makedirs(path)
+            filename=path+'/log/'+filename)
     def info(self, string):
         print("[INFO] "+string)
         logging.info(string)
@@ -39,7 +39,7 @@ class Driver:
             chrome_options.add_argument('--disable-dev-shm-usage')
         self.driver = webdriver.Chrome('chromedriver',options=chrome_options)
         self.driver.set_window_size(width, height)
-        self.logging = Logger(self.path+'/log',datetime.datetime.now().strftime("shopee.%Y-%m.log"))
+        self.logging = Logger(self.path, datetime.datetime.now().strftime("shopee.%Y-%m.log"))
         print("Init driver done.")
     def saveCookie(self, cookieName):
         with open(self.path + '/' + cookieName, 'wb') as filehandler:
