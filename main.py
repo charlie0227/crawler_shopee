@@ -54,7 +54,6 @@ class Driver:
 class Crawler(Driver):
     def __init__(self, hide = True):
         super().__init__(1200,800,hide)
-        self.logging = Logger(self.path+'/log',datetime.datetime.now().strftime("shopee.%Y-%m.log"))
     def checkPopModal(self):
         try:
             pop = driver.find_element_by_css_selector(".shopee-popup__close-btn")
