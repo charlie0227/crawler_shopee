@@ -18,6 +18,4 @@ ENV DISPLAY=:99
 RUN pip install selenium==3.8.0
 
 ENV PATH /usr/local/bin:$PATH
-COPY . /code
 WORKDIR /code
-RUN ls /code

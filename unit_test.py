@@ -6,18 +6,18 @@ class TestStringMethods(unittest.TestCase):
         self.a.getRequest("https://shopee.tw")
     def tearDown(self):
         self.a.close()
-    """
     def test_login_button(self):
+        WebDriverWait(self.a.driver, 3).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".navbar__link--account")) )
         result = self.a.driver.find_elements_by_css_selector(".navbar__link--account")
         self.assertEqual(len(result), 2)
     def test_login_textbox(self):
+        WebDriverWait(self.a.driver, 3).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".navbar__link--account")) )
         self.a.driver.find_elements_by_css_selector(".navbar__link--account")[1].click()
         WebDriverWait(self.a.driver, 3).until( EC.presence_of_element_located((By.CLASS_NAME, "input-with-status__input")) )
         result = self.a.driver.find_elements_by_css_selector(".shopee-authen--login .input-with-status__input")
         buttom = self.a.driver.find_elements_by_css_selector(".shopee-authen--login .btn-solid-primary")
         self.assertEqual(len(result), 2)
         self.assertEqual(len(buttom), 1)
-        """
     def test_sms_textbox(self):
         self.a.loginByPass()
         WebDriverWait(self.a.driver, 3).until( EC.presence_of_element_located((By.CLASS_NAME, "shopee-authen__outline-button")))
@@ -25,7 +25,6 @@ class TestStringMethods(unittest.TestCase):
         smsSubmit = self.a.driver.find_elements_by_css_selector(".shopee-authen .btn-solid-primary")
         self.assertEqual(len(smsText), 1)
         self.assertEqual(len(smsSubmit), 1)
-    """
     def test_login(self):
         self.a.checkPopModal()
         #Use cookie to login
@@ -51,7 +50,6 @@ class TestStringMethods(unittest.TestCase):
                 sys.exit(0)
         #After login, Go to coin page 
         self.a.saveCookie(cookie_name)
-        self.a.getRequest("https://shopee.tw/shopee-coins-internal/?scenario=1")
-        self.a.clickCoin()"""
+        self.clickCoin()
 if __name__ == '__main__':
     unittest.main()

@@ -45,6 +45,10 @@ class Driver:
         with open(self.path + '/' + cookieName, 'wb') as filehandler:
             pickle.dump(self.driver.get_cookies(), filehandler)
         self.logging.info("Save cookie to {}".format(cookieName))
+    def loadCookie(self, cookieName):
+        with open(self.path + '/' + cookieName, 'rb') as cookiesfile:
+            for cookie in pickle.load(cookiesfile):
+                self.driver.add_cookie(cookie)
     def getRequest(self, url):
         self.driver.get(url)
 class Crawler(Driver):
@@ -71,9 +75,7 @@ class Crawler(Driver):
             return False
     def loginByCookie(self, cookieName):
         try:
-            with open(self.path + '/' + cookieName, 'rb') as cookiesfile:
-                for cookie in pickle.load(cookiesfile):
-                    self.driver.add_cookie(cookie)
+            self.loadCookie(cookieName)
             self.driver.refresh()
             self.logging.info("Use {} to login".format(cookieName))
         except Exception as e:
@@ -128,6 +130,7 @@ class Crawler(Driver):
     def clickCoin(self):
         try:
             # wait for page loading
+            self.getRequest("https://shopee.tw/shopee-coins-internal/?scenario=1")
             WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".check-box")))
             # get information
             coinNow = self.driver.find_element_by_css_selector(".check-box .total-coins") 
@@ -168,6 +171,5 @@ if __name__ == "__main__":
             sys.exit(0)
     #After login, Go to coin page 
     a.saveCookie(cookie_name)
-    a.getRequest("https://shopee.tw/shopee-coins-internal/?scenario=1")
     a.clickCoin()
     a.close()
