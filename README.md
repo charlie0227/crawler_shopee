@@ -26,12 +26,12 @@ Filled in your username and password in env.py
 
 Simply run command
 
-    docker run -it --rm -v .:/code charlie27/python36-selenium-chromedriver sh -c "python main.py"
+    docker run -it --rm -v <your-path>/crawler_shopee:/code charlie27/python36-selenium-chromedriver sh -c "python main.py"
     
 Or build by yourself
 
     docker build -t shopee:latest .
-    docker run -it --rm -v .:/code shopee sh -c "python main.py"
+    docker run -it --rm -v <your-path>/crawler_shopee:/code shopee sh -c "python main.py"
     
 You'll need to enter SMS authenticate first time if used password to login
 
