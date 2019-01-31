@@ -64,7 +64,7 @@ class Crawler(Driver):
             pass
     def checkLogin(self):
         try:
-            element = WebDriverWait(self.driver, 3).until(
+            element = WebDriverWait(self.driver, 5).until(
                 EC.presence_of_element_located((By.CLASS_NAME, "shopee-avatar"))
             )
             self.logging.info("Login Success")
@@ -83,7 +83,7 @@ class Crawler(Driver):
         try:
             # click to show login modal
             login_button = self.driver.find_elements_by_css_selector(".navbar__link--account")[1].click()
-            WebDriverWait(self.driver, 3).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".shopee-authen--login .input-with-status__input")) )
+            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".shopee-authen--login .input-with-status__input")) )
         except Exception as e:
             self.logging.error("Login Modal not showing"+repr(e))
             self.exit()
@@ -102,7 +102,7 @@ class Crawler(Driver):
     def checkSMS(self):
         try:
             # Check SMS textbox exists
-            WebDriverWait(self.driver, 3).until( EC.presence_of_element_located((By.CLASS_NAME, "shopee-authen__outline-button")))
+            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CLASS_NAME, "shopee-authen__outline-button")))
             # Catch text & submit buttom
             smsText = self.driver.find_element_by_css_selector(".shopee-authen .input-with-status__input")
             smsSubmit = self.driver.find_element_by_css_selector(".shopee-authen .btn-solid-primary")
@@ -114,7 +114,7 @@ class Crawler(Driver):
             # handle sms error  
             try:
                 # wait to check if login success
-                WebDriverWait(self.driver, 3).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".shopee-avatar")))
+                WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".shopee-avatar")))
             except:
                 #login failed
                 smsError = self.driver.find_elements_by_css_selector(".shopee-authen .shopee-authen__error")
@@ -143,7 +143,7 @@ class Crawler(Driver):
                 #click to get shopee coin
                 coinGet[0].click()
             #wait for already information display login-check-btn
-            WebDriverWait(self.driver, 3).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".check-box .top-btn.Regular")))
+            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".check-box .top-btn.Regular")))
             #show after information
             coinNow = self.driver.find_element_by_css_selector(".check-box .total-coins") 
             coinAlready = self.driver.find_element_by_css_selector(".check-box .top-btn.Regular")

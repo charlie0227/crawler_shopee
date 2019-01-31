@@ -38,7 +38,11 @@ You'll need to enter SMS authenticate first time if used password to login
 ![alt text](https://raw.githubusercontent.com/charlie0227/crawler_shopee/master/readme/SMS.png)
 
     Please Enter SMS code in 60 seconds: 
-    
+
+crontab
+
+    0 0 * * * /usr/bin/docker run --rm -v <your-path>/crawler_shopee:/code shopee sh -c "python main.py" >/dev/null
+
 ## Running the tests
 
 Explain how to run the unit test
