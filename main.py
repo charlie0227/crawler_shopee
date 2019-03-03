@@ -130,7 +130,7 @@ class Crawler(Driver):
         try:
             # wait for page loading
             self.getRequest("https://shopee.tw/shopee-coins-internal/?scenario=1")
-            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".check-box")))
+            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".check-in-tip")))
             # get information
             coinNow = self.driver.find_element_by_css_selector(".check-box .total-coins") 
             coinGet = self.driver.find_elements_by_css_selector(".check-box .check-in-tip")
