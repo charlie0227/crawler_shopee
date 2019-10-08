@@ -56,11 +56,12 @@ class Crawler(Driver):
         super().__init__(1200,800,hide)
     def checkPopModal(self):
         try:
-            pop = driver.find_element_by_css_selector(".shopee-popup__close-btn")
+            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".shopee-popup__close-btn")))
+            pop = self.driver.find_element_by_css_selector(".shopee-popup__close-btn")
             pop.click()
             self.logging.info("pop modal close")
-        except :
-            self.logging.info("pop modal not found")
+        except Exception as e:
+            self.logging.info("pop modal not found:"+repr(e))
             pass
     def checkLogin(self):
         try:
@@ -83,17 +84,23 @@ class Crawler(Driver):
         try:
             # click to show login modal
             login_button = self.driver.find_elements_by_css_selector(".navbar__link--account")[1].click()
-            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".shopee-authen--login .input-with-status__input")) )
+            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".shopee-modal__content")) )
         except Exception as e:
             self.logging.error("Login Modal not showing"+repr(e))
-            self.exit()
+            self.close()
+            sys.exit(0)
         try:
             # Enter Account & Password
-            [accountText, passwordText] = self.driver.find_elements_by_css_selector(".shopee-authen--login .input-with-status__input")
-            submitButtom = self.driver.find_elements_by_css_selector(".shopee-authen--login .btn-solid-primary")[0]
+            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".shopee-modal__content input")))
+            modal = self.driver.find_element_by_css_selector(".shopee-modal__content")
+            [accountText, passwordText] = modal.find_elements_by_tag_name("input")
+            submitButtom = modal.find_elements_by_tag_name("button")[4]
             accountText.send_keys(text_username)
             passwordText.send_keys(text_password)
+            print(submitButtom.text)
+            sleep(1)
             submitButtom.click()
+            sleep(3)
             self.logging.info("Use password to login")
         except Exception as e:
             self.logging.error("Wrong account and password"+repr(e))
@@ -102,52 +109,43 @@ class Crawler(Driver):
     def checkSMS(self):
         try:
             # Check SMS textbox exists
-            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CLASS_NAME, "shopee-authen__outline-button")))
+            modal = self.driver.find_element_by_css_selector(".shopee-modal__content")
             # Catch text & submit buttom
-            smsText = self.driver.find_element_by_css_selector(".shopee-authen .input-with-status__input")
-            smsSubmit = self.driver.find_element_by_css_selector(".shopee-authen .btn-solid-primary")
-            
+            smsText = modal.find_element_by_tag_name("input")
+            smsSubmit = modal.find_elements_by_tag_name("button")[3]
+            print(smsSubmit.text)
             text_sms = input("Please Enter SMS code in 60 seconds: ")
             smsText.clear()
             smsText.send_keys(text_sms)
+            sleep(1)
             smsSubmit.click()
-            # handle sms error  
-            try:
-                # wait to check if login success
-                WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".shopee-avatar")))
-            except:
-                #login failed
-                smsError = self.driver.find_elements_by_css_selector(".shopee-authen .shopee-authen__error")
-                if len(smsError) > 0:
-                    self.logging.error("Sending SMS code "+smsError[0].text)
-                else:
-                    self.logging.error("Sending SMS code Run time out.")
-                self.close()
-                sys.exit(0)
+            sleep(3)
         except Exception as e:
             self.logging.info("No need SMS authenticate"+repr(e))
     def clickCoin(self):
         try:
             # wait for page loading
             self.getRequest("https://shopee.tw/shopee-coins-internal/?scenario=1")
-            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".check-in-tip")))
+            sleep(5)
+            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".check-box")))
             # get information
-            coinNow = self.driver.find_element_by_css_selector(".check-box .total-coins") 
-            coinGet = self.driver.find_elements_by_css_selector(".check-box .check-in-tip")
+            check_box = self.driver.find_element_by_css_selector(".check-box")
+            coinNow = check_box.find_element_by_css_selector(".total-coins") 
+            coinGet = check_box.find_elements_by_css_selector(".capitalize")
             if len(coinGet) is 0:
                 # Already click
-                self.logging.info("今天已經獲取過蝦幣")
+                self.logging.info("Already archeive shopee coin today")
             else:
                 #show before information
-                self.logging.info("目前有：" + coinNow.text + " 蝦幣，" + coinGet[0].text)
+                self.logging.info("Current shopee coin：" + coinNow.text + " $，" + coinGet[0].text)
                 #click to get shopee coin
                 coinGet[0].click()
-            #wait for already information display login-check-btn
-            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".check-box .top-btn.Regular")))
+            #wait for already information display login-check-btni
+            sleep(3)
             #show after information
             coinNow = self.driver.find_element_by_css_selector(".check-box .total-coins") 
             coinAlready = self.driver.find_element_by_css_selector(".check-box .top-btn.Regular")
-            self.logging.info("目前有：" + coinNow.text + " 蝦幣，" + coinAlready.text)
+            self.logging.info("Current shopee coin：" + coinNow.text + " $，" + coinAlready.text)
         except Exception as e:
             self.logging.error(repr(e))
             self.close()
