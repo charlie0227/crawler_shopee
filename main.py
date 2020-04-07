@@ -1,8 +1,9 @@
-import os 
+import os
 import sys
-import pickle 
+import pickle
 import logging
 import datetime
+import inspect
 from env import *
 from time import gmtime, strftime,sleep
 from selenium import webdriver
@@ -12,163 +13,246 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-class Logger:
-    def __init__(self, path, filename):
-        if not os.path.exists(path+'/log'):
-            os.makedirs(path+'/log')
-        logging.basicConfig(level=logging.INFO,
-            format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-            datefmt='%m-%d %H:%M:%S',
-            filename=path+'/log/'+filename)
-    def info(self, string):
-        print("[INFO] "+string)
-        logging.info(string)
-    def error(self, string):
-        print("[ERROR] "+string)
-        logging.error(string)
-class Driver:
+
+class Config:
+
+    DEBUG = False
+    LOGGING_PATH = 'log'
+    WAIT_TIMEOUT = 5
+    elements_by_css = {
+        "POP_MODAL": ".shopee-popup__close-btn",
+        "AVATAR": ".shopee-avatar",
+        "NAV_LOGIN_MODAL": ".navbar__link--account",
+        "LOGIN_SUBMIT": "#modal > aside > div > div > div > div > div > div > button:nth-child(2)",
+        "SMS_MODAL": ".shopee-authen__outline-button",
+        "SMS_TEXT": ".shopee-authen .input-with-status__input",
+        "SMS_SUBMIT": ".shopee-authen .btn-solid-primary",
+        "LOGIN_FAILED": ".shopee-authen .shopee-authen__error",
+        "COIN_PAGE_READY": ".check-box",
+        "COIN_NOW": ".check-box .total-coins",
+        "GET_COIN": ".check-box .check-in-tip",
+        "COIN_REGULAR": ".check-box .top-btn.Regular"
+    }
+    elements_by_name = {
+        "LOGIN_USER": "loginKey",
+        "LOGIN_PASS": "password"
+    }
+    urls = {
+        "INDEX": "https://shopee.tw",
+        "COIN_PAGE": "https://shopee.tw/shopee-coins-internal/?scenario=1"
+    }
     path = os.path.dirname(os.path.abspath(__file__))
-    def __init__(self, width, height, hide = True):
+
+
+class Logger(Config):
+    def __init__(self):
+        path = os.path.join(self.path, self.LOGGING_PATH)
+        path = "{}/{}".format(path, datetime.datetime.now().strftime("shopee.%Y-%m.log"))
+        if not os.path.exists(path):
+            os.makedirs(path)
+        logging_level = logging.DEBUG if self.DEBUG else logging.INFO
+        logger = logging.getLogger()
+        logger.setLevel(logging_level)
+        formatter = logging.Formatter('[%(filename)s:%(lineno)s - %(funcName)20s() ] %(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+        ch = logging.StreamHandler()
+        ch.setFormatter(formatter)
+        fh = logging.FileHandler(path)
+        fh.setFormatter(formatter)
+        logger.addHandler(ch)
+        logger.addHandler(fh)
+        self.logger = logger
+
+    def get_logger(self):
+        return self.logger
+
+
+logger = Logger().get_logger()
+
+class Driver(Config):
+
+    def __init__(self, width, height):
+
         chrome_options = Options()
-        if hide:
+        # Hide the chromedriver
+        if not self.DEBUG or self.path == '/code':
             chrome_options.add_argument('--headless')
-            chrome_options.add_argument('--start-maximized') 
+            chrome_options.add_argument('--start-maximized')
             chrome_options.add_argument('disable-infobars')
             chrome_options.add_argument('--disable-extensions')
             chrome_options.add_argument('--no-sandbox')
             chrome_options.add_argument('--disable-dev-shm-usage')
         self.driver = webdriver.Chrome('chromedriver',options=chrome_options)
         self.driver.set_window_size(width, height)
-        self.logging = Logger(self.path, datetime.datetime.now().strftime("shopee.%Y-%m.log"))
+        self.path = os.path.dirname(os.path.abspath(__file__))
         print("Init driver done.")
+
     def saveCookie(self, cookieName):
         with open(self.path + '/' + cookieName, 'wb') as filehandler:
             pickle.dump(self.driver.get_cookies(), filehandler)
-        self.logging.info("Save cookie to {}".format(cookieName))
+        logger.info("Save cookie to {}".format(cookieName))
+
     def loadCookie(self, cookieName):
         with open(self.path + '/' + cookieName, 'rb') as cookiesfile:
             for cookie in pickle.load(cookiesfile):
                 self.driver.add_cookie(cookie)
+
     def getRequest(self, url):
-        self.driver.get(url)
-class Crawler(Driver):
-    def __init__(self, hide = True):
-        super().__init__(1200,800,hide)
+        self.driver.get(self.urls.get(url))
+
+    def wait_until(self, method=None, target=None):
+        if method == 'css':
+            selector = By.CSS_SELECTOR
+            target = self.elements_by_css.get(target)
+
+        WebDriverWait(self.driver, self.WAIT_TIMEOUT).until(
+            EC.presence_of_element_located((selector, target))
+        )
+
+    def find(self, method=None, target=None):
+        if method == 'css':
+            target = self.elements_by_css.get(target)
+            result = self.driver.find_elements_by_css_selector(target)
+        if method == 'name':
+            target = self.elements_by_name.get(target)
+            result = self.driver.find_elements_by_name(target)
+
+        logger.debug(result)
+        return result[0] if len(result) is 1 else result
+
+
+class Crawler(Driver, Config):
+
+    def __init__(self):
+        super().__init__(1200, 800)
+
     def checkPopModal(self):
         try:
-            pop = driver.find_element_by_css_selector(".shopee-popup__close-btn")
+            sleep(3)
+            pop = self.find("css", "POP_MODAL")
             pop.click()
-            self.logging.info("pop modal close")
+            logger.info("pop modal close")
         except :
-            self.logging.info("pop modal not found")
-            pass
+            logger.info("pop modal not found")
+
     def checkLogin(self):
         try:
-            element = WebDriverWait(self.driver, 5).until(
-                EC.presence_of_element_located((By.CLASS_NAME, "shopee-avatar"))
-            )
-            self.logging.info("Login Success")
+            self.wait_until("css", "AVATAR")
+            logger.info("Login Success")
             return True
         except Exception as e:
-            self.logging.info("Login Failed")
+            logger.info("Login Failed")
             return False
+
     def loginByCookie(self, cookieName):
         try:
             self.loadCookie(cookieName)
             self.driver.refresh()
-            self.logging.info("Use {} to login".format(cookieName))
+            logger.info("Use {} to login".format(cookieName))
         except Exception as e:
-            self.logging.info("{} not found".format(cookieName))
+            logger.info("{} not found".format(cookieName))
+
     def loginByPass(self):
         try:
             # click to show login modal
-            login_button = self.driver.find_elements_by_css_selector(".navbar__link--account")[1].click()
-            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".shopee-authen--login .input-with-status__input")) )
+            login_button = self.find("css", "NAV_LOGIN_MODAL")[1]
+            login_button.click()
+            self.wait_until("css", "LOGIN_SUBMIT")
         except Exception as e:
-            self.logging.error("Login Modal not showing"+repr(e))
-            self.exit()
+            logger.error("Login Modal not showing"+repr(e))
+            self.close()
         try:
             # Enter Account & Password
-            [accountText, passwordText] = self.driver.find_elements_by_css_selector(".shopee-authen--login .input-with-status__input")
-            submitButtom = self.driver.find_elements_by_css_selector(".shopee-authen--login .btn-solid-primary")[0]
+            accountText = self.find("name", "LOGIN_USER")
+            passwordText = self.find("name", "LOGIN_PASS")
+            submitButtom = self.find("css", "LOGIN_SUBMIT")
+
             accountText.send_keys(text_username)
             passwordText.send_keys(text_password)
             submitButtom.click()
-            self.logging.info("Use password to login")
+            logger.info("Use password to login")
         except Exception as e:
-            self.logging.error("Wrong account and password"+repr(e))
+            logger.error("Wrong account and password"+repr(e))
             self.close()
             sys.exit(0)
+
     def checkSMS(self):
         try:
             # Check SMS textbox exists
-            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CLASS_NAME, "shopee-authen__outline-button")))
+            self.wait_until("css", "SMS_MODAL")
             # Catch text & submit buttom
-            smsText = self.driver.find_element_by_css_selector(".shopee-authen .input-with-status__input")
-            smsSubmit = self.driver.find_element_by_css_selector(".shopee-authen .btn-solid-primary")
-            
+            smsText = self.find("css", "SMS_TEXT")
+            smsSubmit = self.find("css", "SMS_SUBMIT")
+
             text_sms = input("Please Enter SMS code in 60 seconds: ")
             smsText.clear()
             smsText.send_keys(text_sms)
             smsSubmit.click()
-            # handle sms error  
+            # handle sms error
             try:
                 # wait to check if login success
-                WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".shopee-avatar")))
+                self.wait_until("css", "AVATAR")
             except:
                 #login failed
-                smsError = self.driver.find_elements_by_css_selector(".shopee-authen .shopee-authen__error")
+                smsError = self.find("css", "LOGIN_FAILED")
                 if len(smsError) > 0:
-                    self.logging.error("Sending SMS code "+smsError[0].text)
+                    logger.error("Sending SMS code "+smsError[0].text)
                 else:
-                    self.logging.error("Sending SMS code Run time out.")
+                    logger.error("Sending SMS code Run time out.")
                 self.close()
                 sys.exit(0)
         except Exception as e:
-            self.logging.info("No need SMS authenticate"+repr(e))
+            logger.info("No need SMS authenticate"+repr(e))
+
     def clickCoin(self):
         try:
             # wait for page loading
-            self.getRequest("https://shopee.tw/shopee-coins-internal/?scenario=1")
-            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".check-in-tip")))
+            self.getRequest("COIN_PAGE")
+            self.wait_until("css", "COIN_PAGE_READY")
             # get information
-            coinNow = self.driver.find_element_by_css_selector(".check-box .total-coins") 
-            coinGet = self.driver.find_elements_by_css_selector(".check-box .check-in-tip")
-            if len(coinGet) is 0:
-                # Already click
-                self.logging.info("今天已經獲取過蝦幣")
-            else:
+            current_coin = self.find("css", "COIN_NOW")
+            get_coin = self.find("css", "GET_COIN")
+
+            if get_coin:
                 #show before information
-                self.logging.info("目前有：" + coinNow.text + " 蝦幣，" + coinGet[0].text)
+                logger.info("目前有：" + current_coin.text + " 蝦幣，" + get_coin.text)
                 #click to get shopee coin
-                coinGet[0].click()
+                get_coin.click()
+            else:
+                # Already click
+                logger.info("今天已經獲取過蝦幣")
             #wait for already information display login-check-btn
-            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".check-box .top-btn.Regular")))
+            self.wait_until("css", "COIN_REGULAR")
             #show after information
-            coinNow = self.driver.find_element_by_css_selector(".check-box .total-coins") 
-            coinAlready = self.driver.find_element_by_css_selector(".check-box .top-btn.Regular")
-            self.logging.info("目前有：" + coinNow.text + " 蝦幣，" + coinAlready.text)
+            current_coin = self.find("css", "COIN_NOW")
+            coin_regular = self.find("css", "COIN_REGULAR")
+            logger.info("目前有：" + current_coin.text + " 蝦幣，" + coin_regular.text)
         except Exception as e:
-            self.logging.error(repr(e))
+            logger.error(repr(e))
             self.close()
+
+    def run(self):
+        self.getRequest("INDEX")
+        self.checkPopModal()
+        #Use cookie to login
+        self.loginByCookie(cookie_name)
+        if not self.checkLogin():
+            #Use pass to login
+            self.loginByPass()
+            if not self.checkLogin():
+                self.checkSMS()
+                if not self.checkLogin():
+                    #Login failed
+                    self.close()
+        #After login, Go to coin page
+        self.saveCookie(cookie_name)
+        self.clickCoin()
+        self.close()
+
     def close(self):
         self.driver.close()
-        self.logging.info("Program exit")
+        logger.info("Program exit")
+        sys.exit(0)
+
+
 if __name__ == "__main__":
-    a = Crawler()
-    a.getRequest("https://shopee.tw")
-    a.checkPopModal()
-    #Use cookie to login
-    a.loginByCookie(cookie_name)
-    if not a.checkLogin():
-        #Use pass to login
-        a.loginByPass()
-        a.checkSMS()
-        if not a.checkLogin():
-            #Login failed
-            a.close()
-            sys.exit(0)
-    #After login, Go to coin page 
-    a.saveCookie(cookie_name)
-    a.clickCoin()
-    a.close()
+    Crawler().run()
