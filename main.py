@@ -1,6 +1,6 @@
-import os 
+import os
 import sys
-import pickle 
+import pickle
 import logging
 import datetime
 from env import *
@@ -32,7 +32,7 @@ class Driver:
         chrome_options = Options()
         if hide:
             chrome_options.add_argument('--headless')
-            chrome_options.add_argument('--start-maximized') 
+            chrome_options.add_argument('--start-maximized')
             chrome_options.add_argument('disable-infobars')
             chrome_options.add_argument('--disable-extensions')
             chrome_options.add_argument('--no-sandbox')
@@ -84,15 +84,15 @@ class Crawler(Driver):
         try:
             # click to show login modal
             login_button = self.driver.find_elements_by_css_selector(".navbar__link--account")[1].click()
-            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".shopee-modal__content")) )
+            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, "._2GJ_OW.undefined")) )
         except Exception as e:
             self.logging.error("Login Modal not showing"+repr(e))
             self.close()
             sys.exit(0)
         try:
             # Enter Account & Password
-            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".shopee-modal__content input")))
-            modal = self.driver.find_element_by_css_selector(".shopee-modal__content")
+            WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, "._2GJ_OW.undefined input")))
+            modal = self.driver.find_element_by_css_selector("._2GJ_OW.undefined")
             [accountText, passwordText] = modal.find_elements_by_tag_name("input")
             submitButtom = modal.find_elements_by_tag_name("button")[4]
             accountText.send_keys(text_username)
@@ -109,7 +109,7 @@ class Crawler(Driver):
     def checkSMS(self):
         try:
             # Check SMS textbox exists
-            modal = self.driver.find_element_by_css_selector(".shopee-modal__content")
+            modal = self.driver.find_element_by_css_selector("._2GJ_OW.undefined")
             # Catch text & submit buttom
             smsText = modal.find_element_by_tag_name("input")
             smsSubmit = modal.find_elements_by_tag_name("button")[3]
@@ -130,7 +130,7 @@ class Crawler(Driver):
             WebDriverWait(self.driver, 5).until( EC.presence_of_element_located((By.CSS_SELECTOR, ".check-box")))
             # get information
             check_box = self.driver.find_element_by_css_selector(".check-box")
-            coinNow = check_box.find_element_by_css_selector(".total-coins") 
+            coinNow = check_box.find_element_by_css_selector(".total-coins")
             coinGet = check_box.find_elements_by_css_selector(".capitalize")
             if len(coinGet) is 0:
                 # Already click
@@ -143,7 +143,7 @@ class Crawler(Driver):
             #wait for already information display login-check-btni
             sleep(3)
             #show after information
-            coinNow = self.driver.find_element_by_css_selector(".check-box .total-coins") 
+            coinNow = self.driver.find_element_by_css_selector(".check-box .total-coins")
             coinAlready = self.driver.find_element_by_css_selector(".check-box .top-btn.Regular")
             self.logging.info("Current shopee coin：" + coinNow.text + " $，" + coinAlready.text)
         except Exception as e:
@@ -166,7 +166,7 @@ if __name__ == "__main__":
             #Login failed
             a.close()
             sys.exit(0)
-    #After login, Go to coin page 
+    #After login, Go to coin page
     a.saveCookie(cookie_name)
     a.clickCoin()
     a.close()
