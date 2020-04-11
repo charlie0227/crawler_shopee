@@ -208,16 +208,16 @@ class Crawler(Driver, Config):
             # wait for page loading
             self.getRequest("COIN_PAGE")
             self.wait_until("css", "COIN_PAGE_READY")
-            # get information
-            current_coin = self.find("css", "COIN_NOW")
-            get_coin = self.find("css", "GET_COIN")
-
-            if get_coin:
+            try:
+                self.wait_until("css", "GET_COIN")
+                # get information
+                current_coin = self.find("css", "COIN_NOW")
+                get_coin = self.find("css", "GET_COIN")
                 #show before information
                 logger.info("目前有：" + current_coin.text + " 蝦幣，" + get_coin.text)
                 #click to get shopee coin
                 get_coin.click()
-            else:
+            except:
                 # Already click
                 logger.info("今天已經獲取過蝦幣")
             #wait for already information display login-check-btn
