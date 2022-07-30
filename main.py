@@ -47,9 +47,9 @@ class Config:
 class Logger(Config):
     def __init__(self):
         path = os.path.join(self.path, self.LOGGING_PATH)
-        path = "{}/{}".format(path, datetime.datetime.now().strftime("shopee.%Y-%m.log"))
         if not os.path.exists(path):
             os.makedirs(path)
+        path = "{}/{}".format(path, datetime.datetime.now().strftime("shopee.%Y-%m.log"))
         logging_level = logging.DEBUG if self.DEBUG else logging.INFO
         logger = logging.getLogger()
         logger.setLevel(logging_level)
