@@ -1,6 +1,12 @@
 .DS_Store
-cookie*
 __pycache__/
-env.py
+.venv/
+.pytest_cache/
+# login session — contains your Shopee cookies, never commit
+profile/
+debug/
 log/
+# legacy
+cookie*
+env.py
 chromedriver
