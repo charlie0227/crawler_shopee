@@ -1,80 +1,84 @@
-# Shopee coin getter
-![CI status](https://img.shields.io/badge/build-passing-brightgreen.svg)
+# Shopee coin getter (Playwright)
 
-Shopee coin getter is a script to collect daily shopee coins.
+每天自動到 [shopee.tw](https://shopee.tw/shopee-coins) 簽到領蝦幣。
+v2 用 **Playwright** 重寫，取代原本的 Selenium 3 + chromedriver 版本。
 
-![alt text](https://raw.githubusercontent.com/charlie0227/crawler_shopee/master/readme/overall-1.png)
-## dependencies
-    python==3.6
-    selenium==3.8.0
-    
-## Installation
- [Docker](https://www.docker.com)
- 
-## Getting Started
-    git clone https://github.com/charlie0227/crawler_shopee.git
-    cd crawler_shopee
-    cp env.py.sample env.py 
-    
-Filled in your username and password in env.py
+## 運作方式
 
-    text_username = "<your shopee username>" 
-    text_password = "<your shopee password>"
-    cookie_name = "cookie.pkl"
-    
-## Usage
+| 指令 | 做什麼 | 多久跑一次 |
+|---|---|---|
+| `login` | 開一個**有畫面**的瀏覽器，你自己登入蝦皮（密碼、簡訊/Email 驗證、拼圖都自己處理）。登入狀態存在 `profile/` | 第一次，以及 session 失效時 |
+| `checkin` | 用 `profile/` 的 session 以 headless 開簽到頁，按下簽到 | 每天（launchd / cron） |
 
-Simply run command
+程式**不存帳號密碼**，也不會嘗試繞過驗證碼。蝦皮要求驗證時會直接停下來通知你重新 `login`。
 
-    docker run -it --rm -v <your-path>/crawler_shopee:/code charlie27/python36-selenium-chromedriver sh -c "python main.py"
-    
-Or build by yourself
+> ⚠️ 必須在**家裡的網路**執行（例如常開的 Mac mini）。從雲端主機或 GitHub Actions 連線會被蝦皮導到 `/verify/traffic/error` 擋下。
 
-    docker build -t shopee:latest .
-    docker run -it --rm -v <your-path>/crawler_shopee:/code shopee sh -c "python main.py"
-    
-You'll need to enter SMS authenticate first time if used password to login
+## 安裝（macOS）
 
-![alt text](https://raw.githubusercontent.com/charlie0227/crawler_shopee/master/readme/SMS.png)
+```bash
+git clone https://github.com/charlie0227/crawler_shopee.git
+cd crawler_shopee
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/playwright install chromium   # 或用已安裝的 Chrome：export BROWSER_CHANNEL=chrome
+```
 
-    Please Enter SMS code in 60 seconds: 
+## 使用
 
-crontab
+```bash
+# 1. 第一次：手動登入（會跳出瀏覽器視窗，最多等 10 分鐘）
+BROWSER_CHANNEL=chrome .venv/bin/python shopee_checkin.py login
 
-    0 0 * * * /usr/bin/docker run --rm -v <your-path>/crawler_shopee:/code shopee sh -c "python main.py" >/dev/null
+# 2. 測試簽到
+BROWSER_CHANNEL=chrome .venv/bin/python shopee_checkin.py checkin
+#    想看瀏覽器在做什麼：加 --headed；要詳細 log：加 --debug
 
-## Running the tests
+# 3. 安裝每日排程（macOS launchd，預設每天 09:17）
+scripts/install_launchd.sh 9 17
+```
 
-Explain how to run the unit test
+Linux / cron：
 
-    docker run -it --rm -v .:/code charlie27/python36-selenium-chromedriver sh -c "python unit_test.py"
-    
-## Method
+```cron
+17 9 * * * cd /path/to/crawler_shopee && .venv/bin/python shopee_checkin.py checkin >> log/cron.log 2>&1
+```
 
-__checkPopModal()__
+## 退出碼
 
-Auto close the advertisement modal shopee show first time
+| code | 意義 | 該做什麼 |
+|---|---|---|
+| 0 | 簽到成功 | — |
+| 1 | 今天已簽到 | — |
+| 2 | 登入失效 | 重跑 `login` |
+| 3 | 蝦皮要求驗證 / 流量驗證 | 重跑 `login`；若每天都出現，改 `HEADLESS=0` |
+| 4 | 頁面無法辨識（可能改版） | 看 `debug/` 的截圖與 HTML，把新文案加進 `shopee_checkin.py` 的 `TEXT_*` |
+| 5 | 其他錯誤 | 看 `log/` |
 
-__checkLogin()__
+## 環境變數
 
-check is login or not
+| 變數 | 預設 | 說明 |
+|---|---|---|
+| `BROWSER_CHANNEL` | （Playwright Chromium） | `chrome` = 用本機 Google Chrome |
+| `BROWSER_PATH` | | 指定瀏覽器執行檔路徑 |
+| `HEADLESS` | `1` | `0` = 顯示視窗執行（headless 被擋時用） |
+| `SHOPEE_PROFILE_DIR` | `./profile` | 登入 session 存放處（含 cookie，勿外流） |
+| `STATE_TIMEOUT` | `45` | 等待頁面出現已知狀態的秒數 |
+| `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | | 設定後，失敗時發 Telegram 通知 |
+| `NOTIFY_SUCCESS` | `0` | `1` = 成功時也通知 |
 
-__loginByCookie()__
+## 測試
 
-First, check your cookie is able to login, if success goto clickCoin
+測試用 `page.route` 模擬 shopee.tw，不需要帳號或網路：
 
-__loginByPass()__
+```bash
+.venv/bin/pytest -q
+```
 
-Second, use your account and password to login
+## 蝦皮改版時
 
-__checkSMS()__
-
-Third, if you login by password first time, you'll need to pass SMS authenticate.
-
-__clickCoin()__
-
-Last, goto https://shopee.tw/shopee-coins-internal/?scenario=1 to own your shopee daily coin after login.
-
+頁面判斷全部靠畫面文字（不依賴會變的 CSS class），集中在 `shopee_checkin.py` 開頭：
+`TEXT_CHECKIN_BUTTON`、`TEXT_ALREADY`、`TEXT_VERIFY`。辨識失敗時 `debug/` 會留截圖和 HTML，照著補文案即可。
 
 ## License
 
